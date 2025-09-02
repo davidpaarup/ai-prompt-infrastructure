@@ -1,7 +1,7 @@
 project_name            = "ai-prompt-api"
 resource_group_name     = "ai-prompt"
 location                = "Norway East"
-container_registry_name = "ai-prompt" 
+container_registry_name = "davidpaarup" 
 acr_sku                 = "Basic"
 
 container_cpu    = 0.5

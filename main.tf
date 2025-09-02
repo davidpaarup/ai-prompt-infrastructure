@@ -55,7 +55,7 @@ resource "azurerm_container_app" "api" {
   template {
     container {
       name   = "api"
-      image  = var.initial_container_image
+      image  = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
       cpu    = var.container_cpu
       memory = var.container_memory
 
@@ -71,7 +71,7 @@ resource "azurerm_container_app" "api" {
 
       env {
         name  = "ClientSecret"
-        value = data.azurerm_key_vault_secret.client_secret.value
+        value = azuread_service_principal_password.github_actions.value
       }
 
       env {
@@ -143,11 +143,6 @@ resource "azuread_service_principal" "github_actions" {
 
 resource "azuread_service_principal_password" "github_actions" {
   service_principal_id = azuread_service_principal.github_actions.object_id
-}
-
-data "azurerm_key_vault_secret" "client_secret" {
-  name         = "client-secret"
-  key_vault_id = azurerm_key_vault.main.id
 }
 
 resource "azurerm_key_vault_secret" "github_actions_client_secret" {

@@ -41,7 +41,7 @@ variable "acr_sku" {
 variable "initial_container_image" {
   description = "Initial container image to deploy"
   type        = string
-  default     = "ai-prompt.azurecr.io/ai-prompt-api:latest"
+  default     = "ai-prompt-api"
 }
 
 variable "container_cpu" {
