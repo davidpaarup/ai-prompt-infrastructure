@@ -20,15 +20,6 @@ resource "azurerm_resource_group" "main" {
   location = var.location
 }
 
-# Create Log Analytics Workspace for Container Apps
-#resource "azurerm_log_analytics_workspace" "main" {
-#  name                = "${var.project_name}-law"
-#  location            = azurerm_resource_group.main.location
-#  resource_group_name = azurerm_resource_group.main.name
-#  sku                 = "PerGB2018"
-#  retention_in_days   = 30
-#}
-
 # Create Azure Container Registry
 resource "azurerm_container_registry" "main" {
   name                = var.container_registry_name
@@ -43,7 +34,6 @@ resource "azurerm_container_app_environment" "main" {
   name                       = "${var.project_name}-env"
   location                   = azurerm_resource_group.main.location
   resource_group_name        = azurerm_resource_group.main.name
-  #log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
 }
 
 # Create Container App
@@ -151,47 +141,4 @@ resource "azurerm_mssql_firewall_rule" "allow_all_ips" {
   server_id        = azurerm_mssql_server.ia_prompt.id
   start_ip_address = "0.0.0.0"
   end_ip_address   = "255.255.255.255"
-}
-
-# Store Application Insights connection string in Key Vault
-#resource "azurerm_key_vault_secret" "app_insights_connection_string" {
-  #name         = "ApplicationInsights--ConnectionString"
-  #value        = azurerm_application_insights.main.connection_string
-  #key_vault_id = azurerm_key_vault.main.id
-
- # depends_on = [azurerm_key_vault.main]
-#}
-
-# Store ACR credentials in Key Vault
-#resource "azurerm_key_vault_secret" "acr_username" {
-  #name         = "ACR--Username"
-  #value        = azurerm_container_registry.main.admin_username
-  #key_vault_id = azurerm_key_vault.main.id
-
-#  depends_on = [azurerm_key_vault.main]
-#}
-
-#resource "azurerm_key_vault_secret" "acr_password" {
-#  name         = "ACR--Password"
-#  value        = azurerm_container_registry.main.admin_password
-#  key_vault_id = azurerm_key_vault.main.id
-
- # depends_on = [azurerm_key_vault.main]
-#}
-
-# Store SQL Server credentials in Key Vault
-resource "azurerm_key_vault_secret" "sql_admin_username" {
-  name         = "sql-admin-username"
-  value        = var.sql_admin_username
-  key_vault_id = azurerm_key_vault.main.id
-
-  depends_on = [azurerm_key_vault.main]
-}
-
-resource "azurerm_key_vault_secret" "sql_admin_password" {
-  name         = "sql-admin-password"
-  value        = var.sql_admin_password
-  key_vault_id = azurerm_key_vault.main.id
-
-  depends_on = [azurerm_key_vault.main]
 }

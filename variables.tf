@@ -100,15 +100,3 @@ variable "aspnet_environment" {
     error_message = "ASP.NET environment must be Development, Staging, or Production."
   }
 }
-
-variable "sql_admin_username" {
-  description = "Administrator username for the SQL server"
-  type        = string
-  default     = "ia-prompt"
-}
-
-variable "sql_admin_password" {
-  description = "Administrator password for the SQL server"
-  type        = string
-  sensitive   = true
-}
