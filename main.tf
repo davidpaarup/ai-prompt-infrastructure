@@ -87,15 +87,6 @@ resource "azurerm_container_app" "api" {
   }
 }
 
-# Create Application Insights for monitoring
-#resource "azurerm_application_insights" "main" {
-#  name                = "${var.project_name}-ai"
-#  location            = azurerm_resource_group.main.location
-#  resource_group_name = azurerm_resource_group.main.name
-#  workspace_id        = azurerm_log_analytics_workspace.main.id
-#  application_type    = "web"
-#}
-
 # Create Key Vault for storing secrets
 resource "azurerm_key_vault" "main" {
   name                       = "${var.project_name}-kv"
@@ -151,8 +142,15 @@ resource "azurerm_mssql_database" "ia_prompt" {
   server_id      = azurerm_mssql_server.ia_prompt.id
   collation      = "SQL_Latin1_General_CP1_CI_AS"
   license_type   = "LicenseIncluded"
-  max_size_gb    = 4
   sku_name       = "Basic"
+}
+
+# Create SQL Server Firewall Rule - Allow all IPs
+resource "azurerm_mssql_firewall_rule" "allow_all_ips" {
+  name             = "AllowAllIPs"
+  server_id        = azurerm_mssql_server.ia_prompt.id
+  start_ip_address = "0.0.0.0"
+  end_ip_address   = "255.255.255.255"
 }
 
 # Store Application Insights connection string in Key Vault
