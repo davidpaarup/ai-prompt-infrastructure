@@ -1,4 +1,3 @@
-# Configure the Azure Provider
 terraform {
   required_providers {
     azurerm = {
@@ -13,18 +12,15 @@ terraform {
   required_version = ">= 1.0"
 }
 
-# Configure the Microsoft Azure Provider
 provider "azurerm" {
   features {}
 }
 
-# Create Resource Group
 resource "azurerm_resource_group" "main" {
   name     = var.resource_group_name
   location = var.location
 }
 
-# Create Azure Container Registry
 resource "azurerm_container_registry" "main" {
   name                = var.container_registry_name
   resource_group_name = azurerm_resource_group.main.name
@@ -33,14 +29,12 @@ resource "azurerm_container_registry" "main" {
   admin_enabled       = true
 }
 
-# Create Container Apps Environment
 resource "azurerm_container_app_environment" "main" {
   name                       = "${var.project_name}-env"
   location                   = azurerm_resource_group.main.location
   resource_group_name        = azurerm_resource_group.main.name
 }
 
-# Create Container App
 resource "azurerm_container_app" "api" {
   name                         = "${var.project_name}"
   container_app_environment_id = azurerm_container_app_environment.main.id
@@ -49,13 +43,13 @@ resource "azurerm_container_app" "api" {
 
   registry {
     server               = azurerm_container_registry.main.login_server
-    username             = data.azurerm_key_vault_secret.acr_username.value
+    username             = azurerm_container_registry.main.admin_username
     password_secret_name = "acr-password"
   }
 
   secret {
     name  = "acr-password"
-    value = data.azurerm_key_vault_secret.acr_password.value
+    value = azurerm_container_registry.main.admin_password
   }
 
   template {
@@ -76,28 +70,13 @@ resource "azurerm_container_app" "api" {
       }
 
       env {
-        name  = "ClientId"
-        value = data.azurerm_key_vault_secret.client_id.value
-      }
-
-      env {
         name  = "ClientSecret"
         value = data.azurerm_key_vault_secret.client_secret.value
       }
 
       env {
-        name  = "ModelId"
-        value = data.azurerm_key_vault_secret.model_id.value
-      }
-
-      env {
         name  = "OpenAIKey"
-        value = data.azurerm_key_vault_secret.openai_key.value
-      }
-
-      env {
-        name  = "TenantId"
-        value = data.azurerm_key_vault_secret.tenant_id.value
+        value = var.openai_key
       }
     }
 
@@ -117,7 +96,6 @@ resource "azurerm_container_app" "api" {
   }
 }
 
-# Create Key Vault for storing secrets
 resource "azurerm_key_vault" "main" {
   name                       = "${var.project_name}-kv"
   location                   = azurerm_resource_group.main.location
@@ -137,7 +115,8 @@ resource "azurerm_key_vault" "main" {
       "Delete",
       "Recover",
       "Backup",
-      "Restore"
+      "Restore",
+      "Purge"
     ]
   }
 
@@ -152,76 +131,22 @@ resource "azurerm_key_vault" "main" {
   }
 }
 
-# Get current Azure client configuration
 data "azurerm_client_config" "current" {}
 
-# Data sources for SQL credentials from Key Vault
-data "azurerm_key_vault_secret" "sql_admin_username" {
-  name         = "sql-admin-username"
-  key_vault_id = azurerm_key_vault.main.id
-}
-
-data "azurerm_key_vault_secret" "sql_admin_password" {
-  name         = "sql-admin-password"
-  key_vault_id = azurerm_key_vault.main.id
-}
-
-# Create Azure AD Application for GitHub Actions
 resource "azuread_application" "github_actions" {
   display_name = "github-actions-sp"
 }
 
-# Create Service Principal for GitHub Actions
 resource "azuread_service_principal" "github_actions" {
   client_id = azuread_application.github_actions.client_id
 }
 
-# Create Service Principal Password (Client Secret)
 resource "azuread_service_principal_password" "github_actions" {
   service_principal_id = azuread_service_principal.github_actions.object_id
 }
 
-# Data sources for application secrets from Key Vault
-data "azurerm_key_vault_secret" "client_id" {
-  name         = "client-id"
-  key_vault_id = azurerm_key_vault.main.id
-}
-
 data "azurerm_key_vault_secret" "client_secret" {
   name         = "client-secret"
-  key_vault_id = azurerm_key_vault.main.id
-}
-
-data "azurerm_key_vault_secret" "model_id" {
-  name         = "model-id"
-  key_vault_id = azurerm_key_vault.main.id
-}
-
-data "azurerm_key_vault_secret" "openai_key" {
-  name         = "openai-key"
-  key_vault_id = azurerm_key_vault.main.id
-}
-
-data "azurerm_key_vault_secret" "tenant_id" {
-  name         = "tenant-id"
-  key_vault_id = azurerm_key_vault.main.id
-}
-
-# Data sources for ACR credentials from Key Vault
-data "azurerm_key_vault_secret" "acr_username" {
-  name         = "ACR--Username"
-  key_vault_id = azurerm_key_vault.main.id
-}
-
-data "azurerm_key_vault_secret" "acr_password" {
-  name         = "ACR--Password"
-  key_vault_id = azurerm_key_vault.main.id
-}
-
-# Store GitHub Actions Service Principal secrets in Key Vault
-resource "azurerm_key_vault_secret" "github_actions_client_id" {
-  name         = "client-id"
-  value        = azuread_application.github_actions.client_id
   key_vault_id = azurerm_key_vault.main.id
 }
 
@@ -231,17 +156,21 @@ resource "azurerm_key_vault_secret" "github_actions_client_secret" {
   key_vault_id = azurerm_key_vault.main.id
 }
 
-# Create SQL Server
+resource "azurerm_key_vault_secret" "sql_admin_password" {
+  name         = "sql-admin-password"
+  value        = var.sql_admin_password
+  key_vault_id = azurerm_key_vault.main.id
+}
+
 resource "azurerm_mssql_server" "ai_prompt" {
   name                         = "ai-prompt"
   resource_group_name          = azurerm_resource_group.main.name
   location                     = azurerm_resource_group.main.location
   version                      = "12.0"
-  administrator_login          = data.azurerm_key_vault_secret.sql_admin_username.value
-  administrator_login_password = data.azurerm_key_vault_secret.sql_admin_password.value
+  administrator_login          = var.sql_admin_username
+  administrator_login_password = var.sql_admin_password
 }
 
-# Create SQL Database
 resource "azurerm_mssql_database" "ai_prompt" {
   name           = "ai-prompt"
   server_id      = azurerm_mssql_server.ai_prompt.id
@@ -250,7 +179,6 @@ resource "azurerm_mssql_database" "ai_prompt" {
   sku_name       = "Basic"
 }
 
-# Create SQL Server Firewall Rule - Allow all IPs
 resource "azurerm_mssql_firewall_rule" "allow_all_ips" {
   name             = "AllowAllIPs"
   server_id        = azurerm_mssql_server.ai_prompt.id

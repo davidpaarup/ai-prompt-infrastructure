@@ -1,5 +1,3 @@
-# variables.tf
-
 variable "project_name" {
   description = "Name of the project used for resource naming"
   type        = string
@@ -99,4 +97,22 @@ variable "aspnet_environment" {
     condition     = contains(["Development", "Staging", "Production"], var.aspnet_environment)
     error_message = "ASP.NET environment must be Development, Staging, or Production."
   }
+}
+
+variable "sql_admin_username" {
+  description = "SQL Server administrator username"
+  type        = string
+  default     = "ai-prompt"
+}
+
+variable "sql_admin_password" {
+  description = "SQL Server administrator password"
+  type        = string
+  sensitive   = true
+}
+
+variable "openai_key" {
+  description = "OpenAI API key"
+  type        = string
+  sensitive   = true
 }
