@@ -1,13 +1,11 @@
 variable "project_name" {
   description = "Name of the project used for resource naming"
   type        = string
-  default     = "myapi"
 }
 
 variable "resource_group_name" {
   description = "Name of the Azure Resource Group"
   type        = string
-  default     = "rg-myapi-prod"
 }
 
 variable "location" {
@@ -19,7 +17,6 @@ variable "location" {
 variable "container_registry_name" {
   description = "Name of the Azure Container Registry (must be globally unique)"
   type        = string
-  default     = "acrmyapi001"
   
   validation {
     condition     = can(regex("^[a-zA-Z0-9]*$", var.container_registry_name))
@@ -70,33 +67,12 @@ variable "min_replicas" {
   description = "Minimum number of container replicas"
   type        = number
   default     = 0
-  
-  validation {
-    condition     = var.min_replicas >= 0 && var.min_replicas <= 1000
-    error_message = "Min replicas must be between 0 and 1000."
-  }
 }
 
 variable "max_replicas" {
   description = "Maximum number of container replicas"
   type        = number
-  default     = 10
-  
-  validation {
-    condition     = var.max_replicas >= 1 && var.max_replicas <= 1000
-    error_message = "Max replicas must be between 1 and 1000."
-  }
-}
-
-variable "aspnet_environment" {
-  description = "ASP.NET Core environment"
-  type        = string
-  default     = "Production"
-  
-  validation {
-    condition     = contains(["Development", "Staging", "Production"], var.aspnet_environment)
-    error_message = "ASP.NET environment must be Development, Staging, or Production."
-  }
+  default     = 1
 }
 
 variable "sql_admin_username" {
