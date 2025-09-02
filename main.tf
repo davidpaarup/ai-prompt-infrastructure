@@ -59,6 +59,31 @@ resource "azurerm_container_app" "api" {
         name  = "ASPNETCORE_URLS"
         value = "http://0.0.0.0:8080"
       }
+
+      env {
+        name  = "ClientId"
+        value = data.azurerm_key_vault_secret.client_id.value
+      }
+
+      env {
+        name  = "ClientSecret"
+        value = data.azurerm_key_vault_secret.client_secret.value
+      }
+
+      env {
+        name  = "ModelId"
+        value = data.azurerm_key_vault_secret.model_id.value
+      }
+
+      env {
+        name  = "OpenAIKey"
+        value = data.azurerm_key_vault_secret.openai_key.value
+      }
+
+      env {
+        name  = "TenantId"
+        value = data.azurerm_key_vault_secret.tenant_id.value
+      }
     }
 
     min_replicas = var.min_replicas
@@ -113,6 +138,32 @@ data "azurerm_key_vault_secret" "sql_admin_username" {
 
 data "azurerm_key_vault_secret" "sql_admin_password" {
   name         = "sql-admin-password"
+  key_vault_id = azurerm_key_vault.main.id
+}
+
+# Data sources for application secrets from Key Vault
+data "azurerm_key_vault_secret" "client_id" {
+  name         = "client-id"
+  key_vault_id = azurerm_key_vault.main.id
+}
+
+data "azurerm_key_vault_secret" "client_secret" {
+  name         = "client-secret"
+  key_vault_id = azurerm_key_vault.main.id
+}
+
+data "azurerm_key_vault_secret" "model_id" {
+  name         = "model-id"
+  key_vault_id = azurerm_key_vault.main.id
+}
+
+data "azurerm_key_vault_secret" "openai_key" {
+  name         = "openai-key"
+  key_vault_id = azurerm_key_vault.main.id
+}
+
+data "azurerm_key_vault_secret" "tenant_id" {
+  name         = "tenant-id"
   key_vault_id = azurerm_key_vault.main.id
 }
 
