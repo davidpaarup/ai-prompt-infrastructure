@@ -15,11 +15,3 @@ max_replicas     = 10   # Maximum scale out
 
 # Environment
 aspnet_environment = "Production"
-
-# Tags
-tags = {
-  Environment = "Production"
-  Project     = "MyAPI"
-  ManagedBy   = "Terraform"
-  Owner       = "DevTeam"
-}

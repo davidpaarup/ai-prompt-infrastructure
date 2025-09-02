@@ -15,7 +15,7 @@ variable "resource_group_name" {
 variable "location" {
   description = "Azure region where resources will be created"
   type        = string
-  default     = "East US"
+  default     = "Norway East"
 }
 
 variable "container_registry_name" {
@@ -101,12 +101,14 @@ variable "aspnet_environment" {
   }
 }
 
-#variable "tags" {
-#  description = "Tags to apply to all resources"
-#  type        = map(string)
-#  default = {
-#    Environment = "Production"
-#    Project     = "MyAPI"
-#    ManagedBy   = "Terraform"
-#  }
-#}
+variable "sql_admin_username" {
+  description = "Administrator username for the SQL server"
+  type        = string
+  default     = "ia-prompt"
+}
+
+variable "sql_admin_password" {
+  description = "Administrator password for the SQL server"
+  type        = string
+  sensitive   = true
+}

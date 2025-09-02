@@ -3,7 +3,7 @@
 
 project_name            = "semantic-kernel-api"
 resource_group_name     = "ia-project"
-location               = "East US"
+location               = "Norway East"
 container_registry_name = "testregistrypaarup"  # Must be globally unique
 acr_sku                = "Basic"
 
@@ -15,11 +15,3 @@ max_replicas     = 10   # Maximum scale out
 
 # Environment
 aspnet_environment = "Production"
-
-# Tags
-#tags = {
-#  Environment = "Production"
-#  Project     = "semantic-kernel-api"
-#  ManagedBy   = "Terraform"
-#  Owner       = "David Paarup"
-#}

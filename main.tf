@@ -18,8 +18,6 @@ provider "azurerm" {
 resource "azurerm_resource_group" "main" {
   name     = var.resource_group_name
   location = var.location
-
-  #tags = var.tags
 }
 
 # Create Log Analytics Workspace for Container Apps
@@ -29,8 +27,6 @@ resource "azurerm_resource_group" "main" {
 #  resource_group_name = azurerm_resource_group.main.name
 #  sku                 = "PerGB2018"
 #  retention_in_days   = 30
-
-  #tags = var.tags
 #}
 
 # Create Azure Container Registry
@@ -40,8 +36,6 @@ resource "azurerm_container_registry" "main" {
   location            = azurerm_resource_group.main.location
   sku                 = var.acr_sku
   admin_enabled       = true
-
-  #tags = var.tags
 }
 
 # Create Container Apps Environment
@@ -50,8 +44,6 @@ resource "azurerm_container_app_environment" "main" {
   location                   = azurerm_resource_group.main.location
   resource_group_name        = azurerm_resource_group.main.name
   #log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
-
-  #tags = var.tags
 }
 
 # Create Container App
@@ -93,8 +85,6 @@ resource "azurerm_container_app" "api" {
       latest_revision = true
     }
   }
-
-  #tags = var.tags
 }
 
 # Create Application Insights for monitoring
@@ -104,46 +94,66 @@ resource "azurerm_container_app" "api" {
 #  resource_group_name = azurerm_resource_group.main.name
 #  workspace_id        = azurerm_log_analytics_workspace.main.id
 #  application_type    = "web"
-
-  #tags = var.tags
 #}
 
 # Create Key Vault for storing secrets
-#resource "azurerm_key_vault" "main" {
-#  name                       = "${var.project_name}-kv-${random_string.suffix.result}"
-#  location                   = azurerm_resource_group.main.location
-#  resource_group_name        = azurerm_resource_group.main.name
-#  tenant_id                  = data.azurerm_client_config.current.tenant_id
-#  sku_name                   = "standard"
-#  soft_delete_retention_days = 7
+resource "azurerm_key_vault" "main" {
+  name                       = "${var.project_name}-kv"
+  location                   = azurerm_resource_group.main.location
+  resource_group_name        = azurerm_resource_group.main.name
+  tenant_id                  = data.azurerm_client_config.current.tenant_id
+  sku_name                   = "standard"
+  soft_delete_retention_days = 7
 
- # access_policy {
- #   tenant_id = data.azurerm_client_config.current.tenant_id
- #   object_id = data.azurerm_client_config.current.object_id
+  access_policy {
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = data.azurerm_client_config.current.object_id
 
-  #  secret_permissions = [
-  #    "Get",
-  #    "List",
-  #    "Set",
-  #    "Delete",
-  #    "Recover",
-  #    "Backup",
-  #    "Restore"
-  #  ]
-  #}
-
-  #tags = var.tags
-#}
-
-# Random string for unique naming
-#resource "random_string" "suffix" {
-#  length  = 4
-#  special = false
-#  upper   = false
-#}
+    secret_permissions = [
+      "Get",
+      "List",
+      "Set",
+      "Delete",
+      "Recover",
+      "Backup",
+      "Restore"
+    ]
+  }
+}
 
 # Get current Azure client configuration
-#data "azurerm_client_config" "current" {}
+data "azurerm_client_config" "current" {}
+
+# Data sources for SQL credentials from Key Vault
+data "azurerm_key_vault_secret" "sql_admin_username" {
+  name         = "sql-admin-username"
+  key_vault_id = azurerm_key_vault.main.id
+}
+
+data "azurerm_key_vault_secret" "sql_admin_password" {
+  name         = "sql-admin-password"
+  key_vault_id = azurerm_key_vault.main.id
+}
+
+# Create SQL Server
+resource "azurerm_mssql_server" "ia_prompt" {
+  name                         = "ia-prompt"
+  resource_group_name          = azurerm_resource_group.main.name
+  location                     = azurerm_resource_group.main.location
+  version                      = "12.0"
+  administrator_login          = data.azurerm_key_vault_secret.sql_admin_username.value
+  administrator_login_password = data.azurerm_key_vault_secret.sql_admin_password.value
+}
+
+# Create SQL Database
+resource "azurerm_mssql_database" "ia_prompt" {
+  name           = "ia-prompt"
+  server_id      = azurerm_mssql_server.ia_prompt.id
+  collation      = "SQL_Latin1_General_CP1_CI_AS"
+  license_type   = "LicenseIncluded"
+  max_size_gb    = 4
+  sku_name       = "Basic"
+}
 
 # Store Application Insights connection string in Key Vault
 #resource "azurerm_key_vault_secret" "app_insights_connection_string" {
@@ -170,3 +180,20 @@ resource "azurerm_container_app" "api" {
 
  # depends_on = [azurerm_key_vault.main]
 #}
+
+# Store SQL Server credentials in Key Vault
+resource "azurerm_key_vault_secret" "sql_admin_username" {
+  name         = "sql-admin-username"
+  value        = var.sql_admin_username
+  key_vault_id = azurerm_key_vault.main.id
+
+  depends_on = [azurerm_key_vault.main]
+}
+
+resource "azurerm_key_vault_secret" "sql_admin_password" {
+  name         = "sql-admin-password"
+  value        = var.sql_admin_password
+  key_vault_id = azurerm_key_vault.main.id
+
+  depends_on = [azurerm_key_vault.main]
+}
