@@ -43,7 +43,7 @@ variable "acr_sku" {
 variable "initial_container_image" {
   description = "Initial container image to deploy"
   type        = string
-  default     = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
+  default     = "testregistrypaarup.azurecr.io/semantic-kernel-api:latest"
 }
 
 variable "container_cpu" {

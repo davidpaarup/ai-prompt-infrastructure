@@ -47,6 +47,17 @@ resource "azurerm_container_app" "api" {
   resource_group_name          = azurerm_resource_group.main.name
   revision_mode                = "Single"
 
+  registry {
+    server               = azurerm_container_registry.main.login_server
+    username             = data.azurerm_key_vault_secret.acr_username.value
+    password_secret_name = "acr-password"
+  }
+
+  secret {
+    name  = "acr-password"
+    value = data.azurerm_key_vault_secret.acr_password.value
+  }
+
   template {
     container {
       name   = "api"
@@ -196,6 +207,17 @@ data "azurerm_key_vault_secret" "tenant_id" {
   key_vault_id = azurerm_key_vault.main.id
 }
 
+# Data sources for ACR credentials from Key Vault
+data "azurerm_key_vault_secret" "acr_username" {
+  name         = "ACR--Username"
+  key_vault_id = azurerm_key_vault.main.id
+}
+
+data "azurerm_key_vault_secret" "acr_password" {
+  name         = "ACR--Password"
+  key_vault_id = azurerm_key_vault.main.id
+}
+
 # Store GitHub Actions Service Principal secrets in Key Vault
 resource "azurerm_key_vault_secret" "github_actions_client_id" {
   name         = "client-id"
@@ -210,8 +232,8 @@ resource "azurerm_key_vault_secret" "github_actions_client_secret" {
 }
 
 # Create SQL Server
-resource "azurerm_mssql_server" "ia_prompt" {
-  name                         = "ia-prompt"
+resource "azurerm_mssql_server" "ai_prompt" {
+  name                         = "ai-prompt"
   resource_group_name          = azurerm_resource_group.main.name
   location                     = azurerm_resource_group.main.location
   version                      = "12.0"
@@ -220,9 +242,9 @@ resource "azurerm_mssql_server" "ia_prompt" {
 }
 
 # Create SQL Database
-resource "azurerm_mssql_database" "ia_prompt" {
-  name           = "ia-prompt"
-  server_id      = azurerm_mssql_server.ia_prompt.id
+resource "azurerm_mssql_database" "ai_prompt" {
+  name           = "ai-prompt"
+  server_id      = azurerm_mssql_server.ai_prompt.id
   collation      = "SQL_Latin1_General_CP1_CI_AS"
   license_type   = "LicenseIncluded"
   sku_name       = "Basic"
@@ -231,7 +253,7 @@ resource "azurerm_mssql_database" "ia_prompt" {
 # Create SQL Server Firewall Rule - Allow all IPs
 resource "azurerm_mssql_firewall_rule" "allow_all_ips" {
   name             = "AllowAllIPs"
-  server_id        = azurerm_mssql_server.ia_prompt.id
+  server_id        = azurerm_mssql_server.ai_prompt.id
   start_ip_address = "0.0.0.0"
   end_ip_address   = "255.255.255.255"
 }
