@@ -5,6 +5,10 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~>3.0"
     }
+    azuread = {
+      source  = "hashicorp/azuread"
+      version = "~>2.0"
+    }
   }
   required_version = ">= 1.0"
 }
@@ -93,7 +97,7 @@ resource "azurerm_container_app" "api" {
   ingress {
     allow_insecure_connections = false
     external_enabled           = true
-    target_port                = 80
+    target_port                = 8080
 
     traffic_weight {
       percentage      = 100
@@ -125,6 +129,16 @@ resource "azurerm_key_vault" "main" {
       "Restore"
     ]
   }
+
+  access_policy {
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = azuread_service_principal.github_actions.object_id
+
+    secret_permissions = [
+      "Get",
+      "List"
+    ]
+  }
 }
 
 # Get current Azure client configuration
@@ -139,6 +153,21 @@ data "azurerm_key_vault_secret" "sql_admin_username" {
 data "azurerm_key_vault_secret" "sql_admin_password" {
   name         = "sql-admin-password"
   key_vault_id = azurerm_key_vault.main.id
+}
+
+# Create Azure AD Application for GitHub Actions
+resource "azuread_application" "github_actions" {
+  display_name = "github-actions-sp"
+}
+
+# Create Service Principal for GitHub Actions
+resource "azuread_service_principal" "github_actions" {
+  client_id = azuread_application.github_actions.client_id
+}
+
+# Create Service Principal Password (Client Secret)
+resource "azuread_service_principal_password" "github_actions" {
+  service_principal_id = azuread_service_principal.github_actions.object_id
 }
 
 # Data sources for application secrets from Key Vault
@@ -164,6 +193,19 @@ data "azurerm_key_vault_secret" "openai_key" {
 
 data "azurerm_key_vault_secret" "tenant_id" {
   name         = "tenant-id"
+  key_vault_id = azurerm_key_vault.main.id
+}
+
+# Store GitHub Actions Service Principal secrets in Key Vault
+resource "azurerm_key_vault_secret" "github_actions_client_id" {
+  name         = "client-id"
+  value        = azuread_application.github_actions.client_id
+  key_vault_id = azurerm_key_vault.main.id
+}
+
+resource "azurerm_key_vault_secret" "github_actions_client_secret" {
+  name         = "client-secret"
+  value        = azuread_service_principal_password.github_actions.value
   key_vault_id = azurerm_key_vault.main.id
 }
 
