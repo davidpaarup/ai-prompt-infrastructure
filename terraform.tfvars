@@ -1,7 +1,7 @@
-project_name            = "semantic-kernel-api"
-resource_group_name     = "ai-project"
+project_name            = "ai-prompt-api"
+resource_group_name     = "ai-prompt"
 location                = "Norway East"
-container_registry_name = "testregistrypaarup" 
+container_registry_name = "ai-prompt" 
 acr_sku                 = "Basic"
 
 container_cpu    = 0.5
