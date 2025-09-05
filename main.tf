@@ -70,8 +70,13 @@ resource "azurerm_container_app" "api" {
       }
 
       env {
+        name  = "ClientId"
+        value = azuread_application.ai_prompt.client_id
+      }
+
+      env {
         name  = "ClientSecret"
-        value = azuread_service_principal_password.github_actions.value
+        value = azuread_application_password.ai_prompt.value
       }
 
       env {
@@ -81,7 +86,7 @@ resource "azurerm_container_app" "api" {
 
       env {
         name = "ConnectionString"
-        value = var.connection_string
+        value = "Server=${azurerm_mssql_server.ai_prompt.fully_qualified_domain_name};Database=${azurerm_mssql_database.ai_prompt.name};User Id=${var.sql_admin_username};Password=${var.sql_admin_password};Encrypt=true;TrustServerCertificate=false;"
       }
     }
 
@@ -142,12 +147,65 @@ resource "azuread_application" "github_actions" {
   display_name = "github-actions-sp"
 }
 
+resource "azuread_application" "ai_prompt" {
+  display_name                   = "AI Prompt"
+  sign_in_audience               = "AzureADandPersonalMicrosoftAccount"
+
+  api {
+    requested_access_token_version = 2
+  }
+
+  web {
+    redirect_uris = [
+      "https://ai-prompt-bice.vercel.app/api/auth/callback/microsoft",
+      "http://localhost:3000/api/auth/callback/microsoft"
+    ]
+  }
+
+  required_resource_access {
+    resource_app_id = "00000003-0000-0000-c000-000000000000" # Microsoft Graph
+
+    resource_access {
+      id   = "10465720-29dd-4523-a11a-6a75c743c9d9" # User.Read
+      type = "Scope"
+    }
+
+    resource_access {
+      id   = "df85f4d6-205c-4ac5-a5ea-6bf408dba283" # Files.Read
+      type = "Scope"
+    }
+
+    resource_access {
+      id   = "570282fd-fa5c-430d-a7fd-fc8dc98a9dca" # Mail.Read
+      type = "Scope"
+    }
+
+    resource_access {
+      id   = "e383f46e-2787-4529-855e-0e479a3ffac0" # Mail.Send
+      type = "Scope"
+    }
+
+    resource_access {
+      id   = "e1fe6dd8-ba31-4d61-89e7-88639da4683d" # User.Read (additional scope)
+      type = "Scope"
+    }
+  }
+}
+
 resource "azuread_service_principal" "github_actions" {
   client_id = azuread_application.github_actions.client_id
 }
 
 resource "azuread_service_principal_password" "github_actions" {
   service_principal_id = azuread_service_principal.github_actions.object_id
+}
+
+resource "azuread_service_principal" "ai_prompt" {
+  client_id = azuread_application.ai_prompt.client_id
+}
+
+resource "azuread_application_password" "ai_prompt" {
+  application_id = azuread_application.ai_prompt.id
 }
 
 resource "azurerm_key_vault_secret" "github_actions_client_secret" {
