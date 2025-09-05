@@ -78,6 +78,11 @@ resource "azurerm_container_app" "api" {
         name  = "OpenAIKey"
         value = var.openai_key
       }
+
+      env {
+        name = "ConnectionString"
+        value = var.connection_string
+      }
     }
 
     min_replicas = var.min_replicas

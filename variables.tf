@@ -92,3 +92,9 @@ variable "openai_key" {
   type        = string
   sensitive   = true
 }
+
+variable "connection_string" {
+  description = "Database connection string"
+  type        = string
+  sensitive   = true
+}
