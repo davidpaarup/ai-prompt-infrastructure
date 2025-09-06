@@ -104,16 +104,6 @@ resource "azurerm_container_app" "api" {
       }
 
       env {
-        name  = "AzureApplication__ClientId"
-        value = azuread_application.ai_prompt.client_id
-      }
-
-      env {
-        name        = "AzureApplication__ClientSecret"
-        secret_name = "azure-client-secret"
-      }
-
-      env {
         name        = "ConnectionString"
         secret_name = "connection-string"
       }
