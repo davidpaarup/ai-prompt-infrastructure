@@ -96,11 +96,6 @@ resource "azurerm_container_app" "api" {
       }
 
       env {
-        name  = "SemanticKernel__OpenAIKey"
-        value = var.openai_key
-      }
-
-      env {
         name = "ConnectionString"
         value = "Server=${azurerm_mssql_server.ai_prompt.fully_qualified_domain_name};Database=${azurerm_mssql_database.ai_prompt.name};User Id=${var.sql_admin_username};Password=${var.sql_admin_password};Encrypt=true;TrustServerCertificate=false;"
       }

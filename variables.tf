@@ -87,12 +87,6 @@ variable "sql_admin_password" {
   sensitive   = true
 }
 
-variable "openai_key" {
-  description = "OpenAI API key"
-  type        = string
-  sensitive   = true
-}
-
 variable "better_auth_secret" {
   description = "Better Auth secret key"
   type        = string
