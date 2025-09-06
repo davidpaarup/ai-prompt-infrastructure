@@ -68,6 +68,16 @@ resource "azurerm_container_app" "api" {
     value = azurerm_container_registry.main.admin_password
   }
 
+  secret {
+    name  = "azure-client-secret"
+    value = azuread_application_password.ai_prompt.value
+  }
+
+  secret {
+    name  = "connection-string"
+    value = "Server=${azurerm_mssql_server.ai_prompt.fully_qualified_domain_name};Database=${azurerm_mssql_database.ai_prompt.name};User Id=${var.sql_admin_username};Password=${var.sql_admin_password};Encrypt=true;TrustServerCertificate=false;"
+  }
+
   template {
     container {
       name   = "api"
@@ -91,13 +101,13 @@ resource "azurerm_container_app" "api" {
       }
 
       env {
-        name  = "AzureApplication__ClientSecret"
-        value = azuread_application_password.ai_prompt.value
+        name        = "AzureApplication__ClientSecret"
+        secret_name = "azure-client-secret"
       }
 
       env {
-        name = "ConnectionString"
-        value = "Server=${azurerm_mssql_server.ai_prompt.fully_qualified_domain_name};Database=${azurerm_mssql_database.ai_prompt.name};User Id=${var.sql_admin_username};Password=${var.sql_admin_password};Encrypt=true;TrustServerCertificate=false;"
+        name        = "ConnectionString"
+        secret_name = "connection-string"
       }
 
       env {
