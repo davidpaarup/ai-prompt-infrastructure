@@ -1,6 +1,6 @@
 .DS_Store
 .terraform/
-.secrets.sh
+secrets.sh
 .terraform.*
 terraform.tfstate
 terraform.tfstate.backup

@@ -104,6 +104,11 @@ resource "azurerm_container_app" "api" {
         name = "ConnectionString"
         value = "Server=${azurerm_mssql_server.ai_prompt.fully_qualified_domain_name};Database=${azurerm_mssql_database.ai_prompt.name};User Id=${var.sql_admin_username};Password=${var.sql_admin_password};Encrypt=true;TrustServerCertificate=false;"
       }
+
+      env {
+        name = "FrontendUrl"
+        value = "https://${vercel_project_domain.vercel_app_domain.domain}"
+      }
     }
 
     min_replicas = var.min_replicas
@@ -173,7 +178,7 @@ resource "azuread_application" "ai_prompt" {
 
   web {
     redirect_uris = [
-      "https://ai-prompt-bice.vercel.app/api/auth/callback/microsoft",
+      "https://${vercel_project_domain.vercel_app_domain.domain}/api/auth/callback/microsoft",
       "http://localhost:3000/api/auth/callback/microsoft"
     ]
   }
@@ -293,7 +298,7 @@ resource "vercel_project_environment_variable" "auth_microsoft_entra_id_secret" 
 resource "vercel_project_environment_variable" "next_public_backend_url" {
   project_id = vercel_project.ai_prompt.id
   key        = "NEXT_PUBLIC_BACKEND_URL"
-  value      = "https://${azurerm_container_app.api.latest_revision_fqdn}"
+  value      = "https://${azurerm_container_app.api.ingress[0].fqdn}"
   target     = ["production", "preview", "development"]
 }
 
@@ -320,10 +325,15 @@ resource "vercel_project_environment_variable" "better_auth_secret" {
   sensitive  = true
 }
 
+resource "vercel_project_domain" "vercel_app_domain" {
+  project_id = vercel_project.ai_prompt.id
+  domain     = "${vercel_project.ai_prompt.name}-mice.vercel.app"
+}
+
 resource "vercel_project_environment_variable" "better_auth_url" {
   project_id = vercel_project.ai_prompt.id
   key        = "BETTER_AUTH_URL"
-  value      = "https://${vercel_project.ai_prompt.name}.vercel.app"
+  value      = "https://${vercel_project_domain.vercel_app_domain.domain}"
   target     = ["production", "preview", "development"]
 }
 
