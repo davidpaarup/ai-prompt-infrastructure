@@ -24,3 +24,24 @@ output "container_app_url" {
   description = "URL of the deployed Container App"
   value       = "https://${azurerm_container_app.api.latest_revision_fqdn}"
 }
+
+output "github_actions_client_id" {
+  description = "Client ID for GitHub Actions service principal"
+  value       = azuread_application.github_actions.client_id
+}
+
+output "github_actions_client_secret" {
+  description = "Client secret for GitHub Actions service principal"
+  value       = azuread_service_principal_password.github_actions.value
+  sensitive   = true
+}
+
+output "tenant_id" {
+  description = "Azure tenant ID"
+  value       = data.azurerm_client_config.current.tenant_id
+}
+
+output "subscription_id" {
+  description = "Azure subscription ID"
+  value       = data.azurerm_client_config.current.subscription_id
+}

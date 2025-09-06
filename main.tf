@@ -8,12 +8,20 @@ terraform {
       source  = "hashicorp/azuread"
       version = "~>2.0"
     }
+    github = {
+      source  = "integrations/github"
+      version = "~> 5.0"
+    }
   }
   required_version = ">= 1.0"
 }
 
 provider "azurerm" {
   features {}
+}
+
+provider "github" {
+  # GitHub token will be provided via GITHUB_TOKEN environment variable
 }
 
 resource "azurerm_resource_group" "main" {
@@ -70,17 +78,17 @@ resource "azurerm_container_app" "api" {
       }
 
       env {
-        name  = "ClientId"
+        name  = "AzureApplication__ClientId"
         value = azuread_application.ai_prompt.client_id
       }
 
       env {
-        name  = "ClientSecret"
+        name  = "AzureApplication__ClientSecret"
         value = azuread_application_password.ai_prompt.value
       }
 
       env {
-        name  = "OpenAIKey"
+        name  = "SemanticKernel__OpenAIKey"
         value = var.openai_key
       }
 
@@ -242,4 +250,21 @@ resource "azurerm_mssql_firewall_rule" "allow_all_ips" {
   server_id        = azurerm_mssql_server.ai_prompt.id
   start_ip_address = "0.0.0.0"
   end_ip_address   = "255.255.255.255"
+}
+
+# GitHub repository data source
+data "github_repository" "ai_prompt_api" {
+  full_name = "davidpaarup/ai-prompt-api"
+}
+
+# GitHub secret for Azure credentials
+resource "github_actions_secret" "azure_credentials" {
+  repository      = data.github_repository.ai_prompt_api.name
+  secret_name     = "AZURE_CREDENTIALS"
+  plaintext_value = jsonencode({
+    clientId       = azuread_application.github_actions.client_id
+    clientSecret   = azuread_service_principal_password.github_actions.value
+    subscriptionId = data.azurerm_client_config.current.subscription_id
+    tenantId       = data.azurerm_client_config.current.tenant_id
+  })
 }
