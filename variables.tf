@@ -92,3 +92,9 @@ variable "openai_key" {
   type        = string
   sensitive   = true
 }
+
+variable "better_auth_secret" {
+  description = "Better Auth secret key"
+  type        = string
+  sensitive   = true
+}

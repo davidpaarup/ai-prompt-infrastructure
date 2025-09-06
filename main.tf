@@ -12,6 +12,10 @@ terraform {
       source  = "integrations/github"
       version = "~> 5.0"
     }
+    vercel = {
+      source  = "vercel/vercel"
+      version = "~> 1.0"
+    }
   }
   required_version = ">= 1.0"
 }
@@ -22,6 +26,10 @@ provider "azurerm" {
 
 provider "github" {
   # GitHub token will be provided via GITHUB_TOKEN environment variable
+}
+
+provider "vercel" {
+  # Vercel token will be provided via VERCEL_API_TOKEN environment variable
 }
 
 resource "azurerm_resource_group" "main" {
@@ -252,9 +260,78 @@ resource "azurerm_mssql_firewall_rule" "allow_all_ips" {
   end_ip_address   = "255.255.255.255"
 }
 
-# GitHub repository data source
+# GitHub repository data sources
 data "github_repository" "ai_prompt_api" {
   full_name = "davidpaarup/ai-prompt-api"
+}
+
+data "github_repository" "ai_prompt_ui" {
+  full_name = "davidpaarup/ai-prompt-ui"
+}
+
+# Vercel project resource
+resource "vercel_project" "ai_prompt" {
+  name      = "ai-prompt"
+  framework = "nextjs"
+  
+  git_repository = {
+    type = "github"
+    repo = data.github_repository.ai_prompt_ui.full_name
+  }
+
+}
+
+# Vercel project environment variables
+resource "vercel_project_environment_variable" "auth_microsoft_entra_id_secret" {
+  project_id = vercel_project.ai_prompt.id
+  key        = "AUTH_MICROSOFT_ENTRA_ID_SECRET"
+  value      = azuread_application_password.ai_prompt.value
+  target     = ["production"]
+  sensitive  = true
+}
+
+resource "vercel_project_environment_variable" "next_public_backend_url" {
+  project_id = vercel_project.ai_prompt.id
+  key        = "NEXT_PUBLIC_BACKEND_URL"
+  value      = "https://${azurerm_container_app.api.latest_revision_fqdn}"
+  target     = ["production", "preview", "development"]
+}
+
+resource "vercel_project_environment_variable" "database_password" {
+  project_id = vercel_project.ai_prompt.id
+  key        = "DATABASE_PASSWORD"
+  value      = var.sql_admin_password
+  target     = ["production"]
+  sensitive  = true
+}
+
+resource "vercel_project_environment_variable" "database_username" {
+  project_id = vercel_project.ai_prompt.id
+  key        = "DATABASE_USERNAME"
+  value      = var.sql_admin_username
+  target     = ["production", "preview", "development"]
+}
+
+resource "vercel_project_environment_variable" "better_auth_secret" {
+  project_id = vercel_project.ai_prompt.id
+  key        = "BETTER_AUTH_SECRET"
+  value      = var.better_auth_secret
+  target     = ["production"]
+  sensitive  = true
+}
+
+resource "vercel_project_environment_variable" "better_auth_url" {
+  project_id = vercel_project.ai_prompt.id
+  key        = "BETTER_AUTH_URL"
+  value      = "https://${vercel_project.ai_prompt.name}.vercel.app"
+  target     = ["production", "preview", "development"]
+}
+
+resource "vercel_project_environment_variable" "auth_microsoft_entra_id_id" {
+  project_id = vercel_project.ai_prompt.id
+  key        = "AUTH_MICROSOFT_ENTRA_ID_ID"
+  value      = azuread_application.ai_prompt.client_id
+  target     = ["production", "preview", "development"]
 }
 
 # GitHub secret for Azure credentials
