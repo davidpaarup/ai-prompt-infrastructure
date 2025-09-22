@@ -16,10 +16,6 @@ terraform {
       source  = "vercel/vercel"
       version = "~> 1.0"
     }
-    google = {
-      source  = "hashicorp/google"
-      version = "~> 5.0"
-    }
   }
   required_version = ">= 1.0"
 }
@@ -34,10 +30,6 @@ provider "github" {
 
 provider "vercel" {
   # Vercel token will be provided via VERCEL_API_TOKEN environment variable
-}
-
-provider "google" {
-  # Google credentials will be provided via GOOGLE_APPLICATION_CREDENTIALS environment variable
 }
 
 resource "azurerm_resource_group" "main" {
@@ -357,9 +349,4 @@ resource "github_actions_secret" "azure_credentials" {
     subscriptionId = data.azurerm_client_config.current.subscription_id
     tenantId       = data.azurerm_client_config.current.tenant_id
   })
-}
-
-# Google Cloud Project
-data "google_project" "ai_prompt" {
-  project_id = "ai-prompt-471317"
 }
